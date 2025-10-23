@@ -1,0 +1,41 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# IDEs
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+# Visual Studio
+*.pyproj
+*.sln
+*.suo
+*.user
+
+# Debug/Testing files
+*.png
+*.html
+debug_*
+error_*
+screenshots/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
