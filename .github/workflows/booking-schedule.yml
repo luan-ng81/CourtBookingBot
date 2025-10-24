@@ -92,26 +92,32 @@ jobs:
       if: env.SHOULD_RUN == 'true' || github.event_name == 'workflow_dispatch'
       id: booking-time
       run: |
-        # Check which day triggered the workflow
-        export TZ=America/Los_Angeles
-        DAY_OF_WEEK=$(date +%u)  # 1=Monday, 4=Thursday, 5=Friday, 7=Sunday
-
-        if [ "$DAY_OF_WEEK" = "4" ]; then
-          # Thursday - Book 8:00 PM to 10:00 PM
-          echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
-          echo "Booking for Thursday: 8:00 PM to 10:00 PM"
-        elif [ "$DAY_OF_WEEK" = "7" ]; then
-          # Sunday - Book 2:00 PM to 4:00 PM
-          echo "PREFERRED_TIME=02:00 PM" >> $GITHUB_ENV
-          echo "Booking for Sunday: 2:00 PM to 4:00 PM"
-        elif [ "$DAY_OF_WEEK" = "5" ]; then
-          # Friday (TEST RUN) - Book 8:00 PM to 10:00 PM
-          echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
-          echo "TEST RUN - Booking for Friday: 8:00 PM to 10:00 PM"
+        # For manual triggers, always use the input if provided
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.preferred_time }}" ]; then
+          echo "PREFERRED_TIME=${{ github.event.inputs.preferred_time }}" >> $GITHUB_ENV
+          echo "Manual trigger - using specified time: ${{ github.event.inputs.preferred_time }}"
         else
-          # Manual trigger or other day - use default or input
-          echo "PREFERRED_TIME=${{ github.event.inputs.preferred_time || '08:00 PM' }}" >> $GITHUB_ENV
-          echo "Manual trigger - using specified time"
+          # For scheduled runs, determine time based on day of week
+          export TZ=America/Los_Angeles
+          DAY_OF_WEEK=$(date +%u)  # 1=Monday, 4=Thursday, 5=Friday, 7=Sunday
+
+          if [ "$DAY_OF_WEEK" = "4" ]; then
+            # Thursday - Book 8:00 PM to 10:00 PM
+            echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
+            echo "Booking for Thursday: 8:00 PM to 10:00 PM"
+          elif [ "$DAY_OF_WEEK" = "7" ]; then
+            # Sunday - Book 2:00 PM to 4:00 PM
+            echo "PREFERRED_TIME=02:00 PM" >> $GITHUB_ENV
+            echo "Booking for Sunday: 2:00 PM to 4:00 PM"
+          elif [ "$DAY_OF_WEEK" = "5" ]; then
+            # Friday (TEST RUN) - Book 8:00 PM to 10:00 PM
+            echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
+            echo "TEST RUN - Booking for Friday: 8:00 PM to 10:00 PM"
+          else
+            # Other days - use default
+            echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
+            echo "Default time: 8:00 PM to 10:00 PM"
+          fi
         fi
 
     - name: Validate environment variables
