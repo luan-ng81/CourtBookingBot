@@ -89,7 +89,7 @@ jobs:
         fi
 
     - name: Determine booking time based on day
-      if: env.SHOULD_RUN == 'true'
+      if: env.SHOULD_RUN == 'true' || github.event_name == 'workflow_dispatch'
       id: booking-time
       run: |
         # Check which day triggered the workflow
