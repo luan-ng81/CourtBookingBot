@@ -16,6 +16,10 @@ on:
     - cron: '0 8 * * 0'
     # TEMPORARY TEST: Friday at 00:00 AM PDT (07:00 AM UTC) - Remove after testing
     - cron: '0 7 * * 5'
+    # Friday at 12:00 PM PDT (19:00 UTC) - Book 5:00 AM to 7:00 AM (13 days ahead)
+    - cron: '0 19 * * 5'
+    # Friday at 12:00 PM PST (20:00 UTC) - Book 5:00 AM to 7:00 AM (13 days ahead)
+    - cron: '0 20 * * 5'
 
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
@@ -78,10 +82,11 @@ jobs:
         echo "Current UTC hour: $CURRENT_HOUR"
         echo "Current LA hour: $LA_HOUR"
 
-        # Only proceed if LA time is 00:xx (midnight)
-        if [ "$LA_HOUR" = "00" ]; then
+        # Only proceed if LA time is 00:xx (midnight) or 12:xx (noon)
+        if [ "$LA_HOUR" = "00" ] || [ "$LA_HOUR" = "12" ]; then
           echo "SHOULD_RUN=true" >> $GITHUB_ENV
-          echo "✓ Correct time - proceeding with booking"
+          echo "LA_RUN_HOUR=$LA_HOUR" >> $GITHUB_ENV
+          echo "✓ Correct time - proceeding with booking (LA hour: $LA_HOUR)"
         else
           echo "SHOULD_RUN=false" >> $GITHUB_ENV
           echo "✗ Wrong timezone offset - skipping (LA hour: $LA_HOUR)"
@@ -97,9 +102,10 @@ jobs:
           echo "PREFERRED_TIME=${{ github.event.inputs.preferred_time }}" >> $GITHUB_ENV
           echo "Manual trigger - using specified time: ${{ github.event.inputs.preferred_time }}"
         else
-          # For scheduled runs, determine time based on day of week
+          # For scheduled runs, determine time based on day of week and hour
           export TZ=America/Los_Angeles
           DAY_OF_WEEK=$(date +%u)  # 1=Monday, 4=Thursday, 5=Friday, 7=Sunday
+          RUN_HOUR="${LA_RUN_HOUR:-00}"  # Get the hour we're running at (00 for midnight, 12 for noon)
 
           if [ "$DAY_OF_WEEK" = "4" ]; then
             # Thursday - Book 8:00 PM to 10:00 PM
@@ -110,9 +116,16 @@ jobs:
             echo "PREFERRED_TIME=02:00 PM" >> $GITHUB_ENV
             echo "Booking for Sunday: 2:00 PM to 4:00 PM"
           elif [ "$DAY_OF_WEEK" = "5" ]; then
-            # Friday (TEST RUN) - Book 8:00 PM to 10:00 PM
-            echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
-            echo "TEST RUN - Booking for Friday: 8:00 PM to 10:00 PM"
+            # Friday - check if midnight or noon run
+            if [ "$RUN_HOUR" = "12" ]; then
+              # Friday noon - Book 5:00 AM to 7:00 AM
+              echo "PREFERRED_TIME=05:00 AM" >> $GITHUB_ENV
+              echo "Booking for Friday (noon run): 5:00 AM to 7:00 AM"
+            else
+              # Friday midnight (TEST RUN) - Book 8:00 PM to 10:00 PM
+              echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
+              echo "TEST RUN - Booking for Friday: 8:00 PM to 10:00 PM"
+            fi
           else
             # Other days - use default
             echo "PREFERRED_TIME=08:00 PM" >> $GITHUB_ENV
