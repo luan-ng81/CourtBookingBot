@@ -134,7 +134,7 @@ jobs:
 
     - name: Upload error screenshots (if any)
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: error-screenshots
         path: error_*.png
